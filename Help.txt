@@ -1,0 +1,4 @@
+The aim of the game is to hit the black balls with bullet, and prevent it from getting inside any of the bucket.
+Pocketing green and red cubes in the bucket leads to 5 points, while hitting the black cubes with bullet gives
+3 points. The canon can be controlled by keyboard controls as described in the assignment doc(pdf). Same goes
+with the buckets. There is a scoring system that outputs the score on the terminal after the end of the game.
