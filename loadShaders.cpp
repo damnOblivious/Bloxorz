@@ -29,6 +29,7 @@ GLuint loadShaders::processShaderData(const char * file_path ,GLenum shaderType)
     glGetShaderiv(ShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
     std::vector<char> ShaderErrorMessage(InfoLogLength);
     glGetShaderInfoLog(ShaderID, InfoLogLength, NULL, &ShaderErrorMessage[0]);
+    cout << file_path << endl;
     fprintf(stdout, "%s\n", &ShaderErrorMessage[0]);
   }
   return ShaderID;
@@ -51,7 +52,7 @@ GLuint loadShaders::linkProgram(GLuint VertexShaderID, GLuint FragmentShaderID){
     glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
     std::vector<char> ProgramErrorMessage( max(InfoLogLength, int(1)) );
     glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
-    fprintf(stdout, "%s\n", &ProgramErrorMessage[0]);
+    fprintf(stdout, "Here:%s\n", &ProgramErrorMessage[0]);
   }
   glDeleteShader(VertexShaderID);
   glDeleteShader(FragmentShaderID);

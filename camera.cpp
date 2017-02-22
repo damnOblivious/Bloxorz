@@ -1,36 +1,81 @@
 #include "camera.h"
+#include "blocks.h"
 
-float camera::xCord = 0.0f;
-float camera::yCord = 0.0f;
-
-float camera::cameraRotAngle;
-camera::camera(float initialRotAngle){
-  camera::cameraRotAngle = initialRotAngle;
+camera::camera(float x,float z, blocks * Block) {
+  myBlock = Block;
+  setNormalView(x,z);
 }
 
-void camera::panAlongX(float displacement) {
-  xCord = xCord - displacement;
-  GLMatrices::Matrices.view = glm::lookAt(glm::vec3(xCord,yCord,3), glm::vec3(xCord,yCord,0), glm::vec3(0,1,0));
-  GLMatrices::Matrices.inverseVP = glm::inverse(GLMatrices::Matrices.projection * GLMatrices::Matrices.view);
+void camera::setTopView(float x,float z) {
+  eye = glm::vec3(x, 7, z);
+  target = glm::vec3(x,0,z);
+  up = glm::vec3(0,0,-1);
+  setViewMatrix();
 }
 
-
-void camera::panAlongY(float displacement) {
-  yCord = yCord - displacement;
-  GLMatrices::Matrices.view = glm::lookAt(glm::vec3(xCord,yCord,3), glm::vec3(xCord,yCord,0), glm::vec3(0,1,0));
-  GLMatrices::Matrices.inverseVP = glm::inverse(GLMatrices::Matrices.projection * GLMatrices::Matrices.view);
+void camera::setNormalView(float x,float z) {
+  eye = glm::vec3(-3,3,3);
+  target = glm::vec3(x,0,z);
+  up = glm::vec3(0,1,0);
+  setViewMatrix();
 }
 
-void camera::setCameraPosition() {
-  // Eye - Location of camera. Don't change unless you are sure!!
-  glm::vec3 eye ( 5*cos(camera::cameraRotAngle*M_PI/180.0f), 0, 5*sin(camera::cameraRotAngle*M_PI/180.0f) );
-  // Target - Where is the camera looking at.  Don't change unless you are sure!!
-  // Up - Up vector defines tilt of camera.  Don't change unless you are sure!!
-  glm::vec3 target (0, 0, 0);
-  glm::vec3 up (0, 1, 0);
+void camera::setHeliView(float x, float z, float rotationAngle, float zoomFactor) {
+  eye = glm::vec3(zoomFactor * sin(glm::radians(rotationAngle)),zoomFactor,-1.0f * zoomFactor * cos(glm::radians(rotationAngle)));
+  target = glm::vec3(x,0,z);
+  up = glm::vec3(0,1,0);
+  setViewMatrix();
+}
 
-  // Compute Camera matrix (view)
-  // Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
-  GLMatrices::Matrices.view = glm::lookAt(glm::vec3(-3,3,3), glm::vec3(0,0,0), glm::vec3(0,1,0));
-  GLMatrices::Matrices.inverseVP = glm::inverse(GLMatrices::Matrices.projection * GLMatrices::Matrices.view);
+void camera::setFollowView() {
+  blockDimensions = myBlock->getBlockDimensions();        //width , height , breadth
+  blockCenter = myBlock->getCenterPosition();             // x ,  y , z
+  eye = glm::vec3(blockCenter.x , blockCenter.y + 4.0f, blockCenter.z- 3.0f);
+  target = blockCenter;
+  up = glm::vec3(0,1,0);
+  setViewMatrix();
+}
+
+void camera::setFirstPersonView(int angle) {
+  blockDimensions = myBlock->getBlockDimensions();        //width , height , breadth
+  blockCenter = myBlock->getCenterPosition();             // x ,  y , z
+  // cout << x << " " << z << " " << rotationAngle << " " << zoomFactor << endl;
+  glm::vec3 topRightEye = glm::vec3(blockCenter.x + (blockDimensions.x)/2.0f, blockCenter.y + (blockDimensions.y)/2.0f, blockCenter.z);
+  glm::vec3 topRightTarget = glm::vec3(blockCenter.x + (blockDimensions.x)*2.0f, blockCenter.y, blockCenter.z);
+
+  glm::vec3 topLeftEye = glm::vec3(blockCenter.x - (blockDimensions.x)/2.0f, blockCenter.y + (blockDimensions.y)/2.0f, blockCenter.z);
+  glm::vec3 topLeftTarget = glm::vec3(blockCenter.x - (blockDimensions.x)*2.0f, blockCenter.y, blockCenter.z);
+
+  glm::vec3 topFrontEye = glm::vec3(blockCenter.x, blockCenter.y + (blockDimensions.y)/2.0f, blockCenter.z + (blockDimensions.z)/2.0f);
+  glm::vec3 topFrontTarget = glm::vec3(blockCenter.x, blockCenter.y, blockCenter.z + (blockDimensions.z)*2.0f);
+
+  glm::vec3 topBehindEye = glm::vec3(blockCenter.x, blockCenter.y + (blockDimensions.y)/2.0f, blockCenter.z - (blockDimensions.z)/2.0f);
+  glm::vec3 topBehindTarget = glm::vec3(blockCenter.x, blockCenter.y, blockCenter.z - (blockDimensions.z)*2.0f);
+
+  if((angle + 360) % 360 == 0){       //along +x front
+    std::cout << "front" << std::endl;
+    eye = topFrontEye;
+    target = topFrontTarget;
   }
+  if((angle + 360) % 360 == 90){        //along -z right
+    std::cout << "1front" << std::endl;
+    eye = topRightEye;
+    target = topRightTarget;
+  }
+  if((angle + 360) % 360 == 180){       //along -x
+    std::cout << "2front2" << std::endl;
+    eye = topBehindEye;
+    target = topBehindTarget;
+  }
+  if((angle + 360) % 360 == 270) {      //along +z
+    std::cout << "3front3" << std::endl;
+    eye = topLeftEye;
+    target = topLeftTarget;
+  }
+  up = glm::vec3(0,1,0);
+  setViewMatrix();
+}
+
+void camera::setViewMatrix() {
+  GLMatrices::Matrices.view = glm::lookAt( eye, target, up );
+}

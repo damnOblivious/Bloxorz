@@ -1,4 +1,5 @@
 #include "headers.h"
+#include "3DObject.h"
 
 #ifndef DRAW_OBJECT
 #define DRAW_OBJECT

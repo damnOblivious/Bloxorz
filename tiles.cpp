@@ -1,59 +1,107 @@
 #include "tiles.h"
 #include "drawObjects.h"
+#include "3DObject.h"
+#include "grid.h"
 
-float blocks::speed = 0.01f;
-blocks::blocks(float x, int randColor) {
-  xCord = x;
-  yCord = 0.0f;
-  color = randColor;
-  vector<GLfloat> colorVec = {1,0,0};
+int tiles::rotationMagnitude = 1;
 
-  vector<glm::vec4> vertices(8);
-  vertices[0] = glm::vec4{ 1.0f,  1.0f,  1.0f, 1.0f};
-  vertices[1] = glm::vec4{-1.0f,  1.0f,  1.0f, 1.0f};
-  vertices[2] = glm::vec4{-1.0f, -1.0f,  1.0f, 1.0f};
-  vertices[3] = glm::vec4{ 1.0f, -1.0f,  1.0f, 1.0f};
-  vertices[4] = glm::vec4{ 1.0f,  1.0f, -1.0f, 1.0f};
-  vertices[5] = glm::vec4{-1.0f,  1.0f, -1.0f, 1.0f};
-  vertices[6] = glm::vec4{-1.0f, -1.0f, -1.0f, 1.0f};
-  vertices[7] = glm::vec4{ 1.0f, -1.0f, -1.0f, 1.0f};
+void tiles::setModelMatrix() {
+  removed = false;
+  rotated = false;
+  isGoal = false;
+  width = scalingFactor;
+  breadth = width;
+  height = width/5.0f;
+  angle = 0;
+  pressed = false;
+  glm::mat4 scaling = glm::scale(glm::vec3(scalingFactor,scalingFactor,scalingFactor));
+  glm::mat4 rotating = glm::rotate((float)glm::radians(0.0f),glm::vec3(0,0,1));
+  glm::mat4 translate = glm::translate (glm::vec3(xCord, yCord, zCord));
+  modelMatrix = translate * rotating * scaling;
+  positionVector = glm::vec3(glm::mat4(modelMatrix) * glm::vec4(0.0f,0.0f,0.0f,1.0f));
+}
 
-  vertexInfo tempInfo;
-
-  for(int i = 0; i < 8 ; ++i) {
-    tempInfo.position = glm::vec4(vertices[i]);
-    tempInfo.color = glm::vec3{1,0,0};
-    info.push_back(tempInfo);
+void tiles::rotateRight(int dir) {
+  if(abs(angle) > 0) {
+    return;
   }
-
-  indicesOrder = {
-    0,1,2,2,3,0,
-    4,5,6,6,7,4,
-    0,3,7,7,4,0,
-    1,2,6,6,5,1,
-    0,1,5,5,4,0,
-    3,2,6,6,7,3
-  };
-  // create3DObject creates and returns a handle to a VAO that can be used later
-  block = drawObjects::create3DObject(GL_TRIANGLES, info, indicesOrder, GL_FILL);
+  angle = 90;
+  pointVector = glm::vec3(positionVector.x + (width/2.0f) , positionVector.y - (float(dir) * (height/2.0f)) , positionVector.z);
+  glm::mat4 translating = glm::translate(pointVector);
+  rotationAxis = glm::vec3(0.0f,0.0f,1.0f);
+  glm::mat4 rotating = glm::rotate(glm::radians(float(dir * rotationMagnitude)),rotationAxis);
+  transformMatrix = translating * rotating * glm::inverse(translating);
+  swap(height,width);
+  rotated = !rotated;
 }
 
-float blocks::getxCord() {
-  return xCord;
-}
-float blocks::getyCord() {
-  return yCord;
-}
-int blocks::getColor() {
-  return color;
+void tiles::rotateLeft(int dir) {
+  if(abs(angle) > 0) {
+    return;
+  }
+  angle = 90;
+  pointVector = glm::vec3(positionVector.x - (width/2.0f) , positionVector.y - (float(dir) * height/2.0f), positionVector.z);
+  glm::mat4 translating = glm::translate(pointVector);
+  rotationAxis = glm::vec3(0.0f,0.0f,1.0f);
+  glm::mat4 rotating = glm::rotate(glm::radians(float(dir * -1.0f * rotationMagnitude)),rotationAxis);
+  transformMatrix = translating * rotating * glm::inverse(translating);
+  swap(height,width);
+  rotated = !rotated;
 }
 
-void blocks::draw() {
-  GLMatrices::Matrices.model = glm::mat4(1.0f);
-  glm::mat4 scaling = glm::scale(glm::vec3(0.5f,0.1f,0.1f));
-  glm::mat4 translate = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f));
-  GLMatrices::Matrices.model = translate;
-  glm::mat4 MVP = GLMatrices::Matrices.projection * GLMatrices::Matrices.view *GLMatrices::Matrices.model;
-  glUniformMatrix4fv(GLMatrices::Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  drawObjects::draw3DObject(block,indicesOrder.size());
+void tiles::rotateForward(int dir) {
+  if(abs(angle) > 0) {
+    return;
+  }
+  angle = 90;
+  pointVector = glm::vec3(positionVector.x, positionVector.y - (dir * height/2.0f), positionVector.z + (breadth/2.0f));
+  glm::mat4 translating = glm::translate(pointVector);
+  rotationAxis = glm::vec3(1.0f,0.0f,0.0f);
+  glm::mat4 rotating = glm::rotate(glm::radians(float(dir * -1.0f * rotationMagnitude)),rotationAxis);
+  transformMatrix = translating * rotating * glm::inverse(translating);
+  swap(breadth,height);
+  rotated = !rotated;
+}
+
+
+void tiles::rotateBackward(int dir) {
+  if(abs(angle) > 0) {
+    return;
+  }
+  angle = 90;
+  pointVector = glm::vec3(positionVector.x, positionVector.y - (dir * height/2.0f),  positionVector.z - (breadth/2.0f));
+  glm::mat4 translating = glm::translate(pointVector);
+  rotationAxis = glm::vec3(1.0f,0.0f,0.0f);
+  glm::mat4 rotating = glm::rotate(glm::radians(float(dir * rotationMagnitude)),rotationAxis);
+  transformMatrix = translating * rotating * glm::inverse(translating);
+  swap(breadth,height);
+  rotated = !rotated;
+}
+
+void tiles::updateRotationAngle() {
+  if(angle > 0){
+    angle = angle - rotationMagnitude;
+  }
+  else {
+    angle = angle + rotationMagnitude;
+  }
+  if(abs(angle) <= 0) {
+    positionVector = glm::vec3(glm::mat4(modelMatrix) * glm::vec4(0.0f,0.0f,0.0f,1.0f));
+  }
+}
+
+void tiles::updateModelMatrix() {
+  modelMatrix = transformMatrix * modelMatrix;
+}
+
+void tiles::removeTile() {
+  transformMatrix = glm::translate(glm::vec3(0.0f,-0.2f,0.0f));
+  removed = true;
+}
+bool tiles::isrotated() {
+  return rotated;
+}
+
+bool tiles::reachedGoal() {
+  return isGoal;
 }

@@ -5,9 +5,15 @@
 #include <mpg123.h>
 #include <ao/ao.h>
 #include <iostream>
+#include <string.h>
+#include <string>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sstream>
 #include <cmath>
 #include <fstream>
 #include <vector>
+#include <algorithm>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -19,15 +25,29 @@
 #include <math.h>       /* sqrt */
 // #include <mpg123.h>
 // #include <ao/ao.h>
+#include <SOIL/SOIL.h>
+#include <assimp/Importer.hpp> //for blender obj
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
+//#include "Text.hpp"
 
 using namespace std;
 
-/*****************************Varibales*****************************************/
+/*****************************Variables*****************************************/
 #define GLM_FORCE_RADIANS
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods);
 void keyboardChar (GLFWwindow* window, unsigned int key);
 void mouseButton (GLFWwindow* window, int button, int action, int mods);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void setupGridAndBlock(int);
+
+class Text;
+
+extern GLuint programID;
+extern int window_width, window_height;
+extern float scalingFactor;
+extern Text *score;
 
 typedef struct VAO {
   GLuint VertexArrayID;
