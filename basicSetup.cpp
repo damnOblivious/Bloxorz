@@ -3,6 +3,8 @@
 #include "loadShaders.h"
 #include "reshapeWindow.h"
 
+GLuint programID;
+
 basicSetup::basicSetup(int intialWidth, int intialHeight){
   width = intialWidth;
   height = intialHeight;
@@ -33,11 +35,12 @@ GLFWwindow* basicSetup::initGLFW ()
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  //window not resizable by user
+  glfwWindowHint(GLFW_SAMPLES, 4);
+
   window = glfwCreateWindow(width, height, "Vaibhav Gupta(201502166)", NULL, NULL);
 
   if (!window) {
     glfwTerminate();
-    //        exit(EXIT_FAILURE);
   }
   glfwMakeContextCurrent(window);
   gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
@@ -60,16 +63,17 @@ void basicSetup::initGL (GLFWwindow* window)
   //loading and linking shaders
   GLuint VertexShaderID = loadShaders::processShaderData( "Sample_GL.vert" , GL_VERTEX_SHADER );
   GLuint FragmentShaderID = loadShaders::processShaderData( "Sample_GL.frag" , GL_FRAGMENT_SHADER );
-  GLuint programID = loadShaders::linkProgram(VertexShaderID , FragmentShaderID);
+  programID = loadShaders::linkProgram(VertexShaderID , FragmentShaderID);
   glUseProgram (programID);
 
   // Get a handle for our "MVP" uniform
   GLMatrices::Matrices.MatrixID = glGetUniformLocation(programID, "MVP");
 
   reshapeWindow::reshapeWindowFunction(window, width, height);
-  camera::setCameraPosition();
+  // camera::setCameraPosition();
   glClearColor (0, 0, 1, 1); // R, G, B, A
   glClearDepth (1.0f);
   glEnable (GL_DEPTH_TEST);
+  glEnable (GL_MULTISAMPLE);
   glDepthFunc (GL_LEQUAL);
 }
